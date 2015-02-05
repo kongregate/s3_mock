@@ -12,7 +12,7 @@ module S3Mock
         Class.new() { def self.exists?() false end }
       end
     end
-    objects = s3_objects.new
+    @objects ||= s3_objects.new
     root = mock("root")
     s3_mocks[""] = root
     root.stubs(:children).returns([])
@@ -34,7 +34,7 @@ module S3Mock
           part_mock.stubs(:exists?).returns(true)
           part_mock.stubs(:key).returns(path)
           part_mock.stubs(:delimiter).returns("/")
-          objects[path] = part_mock
+          @objects[path] = part_mock
         else
           #folder
           part_mock.stubs(:leaf?).returns(false)
@@ -50,7 +50,7 @@ module S3Mock
       end
     end
     AWS::S3::Bucket.any_instance.stubs(:as_tree).with().returns(root)
-    AWS::S3::Bucket.any_instance.stubs(:objects).returns(objects)
+    AWS::S3::Bucket.any_instance.stubs(:objects).returns(@objects)
     #if we just wanted one mock, return pointer to it
     file_or_file_list.is_a?(Array) ? s3_mocks : s3_mocks[file_or_file_list]
   end
