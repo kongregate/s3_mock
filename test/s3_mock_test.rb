@@ -6,7 +6,18 @@ class S3MockTest < MiniTest::Test
 
   include S3Mock
 
-  def test_s3_helper
+  def test_s3_helper_for_single
+    mock_s3_obj = s3_mock('foo/bar/file.json')
+    mock_s3_obj.expects(:write).with("test data")
+
+    s3 = AWS::S3.new
+    bucket = s3.buckets["some-bucket"]
+    assert_equal 1, bucket.objects.length
+    aws_s3_object=bucket.objects["foo/bar/file.json"]
+    aws_s3_object.write("test data")
+  end
+
+  def test_s3_helper_for_array
     s3_mocks = s3_mock([
       "foo/bar/file.json",
       "foo/baz/file.json",
