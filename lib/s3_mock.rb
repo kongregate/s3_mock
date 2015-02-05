@@ -3,8 +3,8 @@ require "aws-sdk"
 
 module S3Mock
 
-  def s3_mock files
-    files = [files] unless files.is_a?(Array)
+  def s3_mock file_or_file_list
+    files = file_or_file_list.is_a?(Array) ? file_or_file_list : [file_or_file_list]
     s3_mocks = {}
     s3_objects = Class.new(super_class=Hash) do
       def [](key)
@@ -51,7 +51,8 @@ module S3Mock
     end
     AWS::S3::Bucket.any_instance.stubs(:as_tree).with().returns(root)
     AWS::S3::Bucket.any_instance.stubs(:objects).returns(objects)
-    s3_mocks
+    #if we just wanted one mock, return pointer to it
+    file_or_file_list.is_a?(Array) ? s3_mocks : s3_mocks[file_or_file_list]
   end
 
 end
