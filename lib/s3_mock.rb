@@ -3,7 +3,7 @@ require "aws-sdk"
 
 module S3Mock
 
-  def s3_mock file_or_file_list
+  def s3_mock(file_or_file_list, dir_contents={})
     files = file_or_file_list.is_a?(Array) ? file_or_file_list : [file_or_file_list]
     s3_mocks = {}
     s3_objects = Class.new(super_class=Hash) do
@@ -12,6 +12,7 @@ module S3Mock
         Class.new() { def self.exists?() false end }
       end
     end
+
     @objects ||= s3_objects.new
     root = mock("root")
     s3_mocks[""] = root
@@ -49,10 +50,22 @@ module S3Mock
 
       end
     end
+
+    dir_contents.each do |path, value|
+      if value.nil?
+        s3_mocks[path].stubs(:children).returns(@objects.values)
+        s3_mocks[path].stubs(:select).returns(s3_mocks[path])
+        s3_mocks[path].stubs(:each).returns([s3_mocks[path]])
+        s3_mocks[path].stubs(:as_tree).returns(s3_mocks[path])
+      else
+        s3_mocks[path].stubs(:children).returns([s3_mocks[value]])
+        s3_mocks[path].stubs(:as_tree).with(:prefix => path).returns(s3_mocks[path])
+      end
+    end
+
     AWS::S3::Bucket.any_instance.stubs(:as_tree).with().returns(root)
     AWS::S3::Bucket.any_instance.stubs(:objects).returns(@objects)
     #if we just wanted one mock, return pointer to it
     file_or_file_list.is_a?(Array) ? s3_mocks : s3_mocks[file_or_file_list]
   end
-
 end
